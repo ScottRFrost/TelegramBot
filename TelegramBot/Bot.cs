@@ -13,7 +13,7 @@ using System.Configuration;
 
 namespace TelegramBot
 {
-    // ReSharper disable FunctionNeverReturns
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Potential Code Quality Issues", "RECS0022:A catch clause that catches System.Exception and has an empty body", Justification = "Lazy")]
     class Bot
     {
         static void Main() 
@@ -31,6 +31,7 @@ namespace TelegramBot
             }
         }
 
+        
         static async Task MainLoop()
         {
             //Read Configuration
@@ -59,15 +60,16 @@ namespace TelegramBot
                         var text = update.Message.Text;
                         var replyText = string.Empty;
                         var replyImage = string.Empty;
+                        var replyImageCaption = string.Empty;
                         var replyDocument = string.Empty;
 
-                        if (text != null && (text.StartsWith("/") || text.StartsWith("!")))
+                        if (text != null && (text.StartsWith("/", StringComparison.Ordinal) || text.StartsWith("!", StringComparison.Ordinal)))
                         {
                             //Log to console
                             Console.WriteLine(update.Message.Chat.Id + " - " + update.Message.From.Username + " - " + text);
 
                             //Allow ! or / 
-                            if (text.StartsWith("!"))
+                            if (text.StartsWith("!", StringComparison.Ordinal))
                                 text = "/" + text.Substring(1);
 
                             //Parse
@@ -77,6 +79,11 @@ namespace TelegramBot
 
                             switch (command)
                             {
+                                case "/doge":
+                                    replyImage = "http://dogr.io/wow/" + body.Replace(",","/").Replace(" ","") + ".png";
+                                    replyImageCaption = "wow";
+                                    break;
+
                                 case "/echo":
                                     replyText = body;
                                     break;
@@ -161,7 +168,8 @@ namespace TelegramBot
 
                                 case "/help":
                                     replyText = "Trixie understands URLs as well as the following commands: !fat, !forecast, !help, !image, !imdb, !google, !outside, !radar, !satellite, !translate, !translateto, !trixie, !version, !weather, !wiki, !ww";
-                                    /*
+                                    /* Send this string of text to BotFather to register the bot's commands:
+doge - Dogeify a comma sep list of terms
 fat - Nutrition information
 forecast - Weather forecast
 help - Displays help text
@@ -169,6 +177,7 @@ image - Search for an image
 imdb - Search IMDB for a movie name
 google - Search Google
 outside - Webcam image
+pony - Search for ponies matching a term
 radar - Weather radar
 satellite - Weather Satellite
 translate - Translate to english
@@ -182,6 +191,7 @@ ww - WeightWatcher PointsPlus calc
                                     break;
 
                                 case "/image":
+                                case "/img":
                                     if (body == string.Empty)
                                     {
                                         replyText = "Usage: /image <Description of image to find>";
@@ -196,9 +206,14 @@ ww - WeightWatcher PointsPlus calc
                                         break;
                                     }
                                     var rimg = new Random();
-                                    var iimg = rimg.Next(0, Enumerable.Count(dimg.d.results));
+                                    var iimgmax = Enumerable.Count(dimg.d.results);
+                                    if (iimgmax > 3)
+                                    {
+                                        iimgmax = 3;
+                                    }
+                                    var iimg = rimg.Next(0, iimgmax);
                                     string imageUrl = dimg.d.results[iimg].MediaUrl.ToString();
-                                    if (imageUrl.Trim().EndsWith(".gif"))
+                                    if (imageUrl.Trim().EndsWith(".gif", StringComparison.Ordinal))
                                     {
                                         replyDocument = dimg.d.results[iimg].MediaUrl;
                                     }
@@ -239,7 +254,7 @@ ww - WeightWatcher PointsPlus calc
                                     if (!string.IsNullOrEmpty(poster) && poster.IndexOf("media-imdb.com", StringComparison.Ordinal) > 0)
                                     {
                                         poster = Regex.Replace(poster, @"_V1.*?.jpg", "_V1._SY200.jpg");
-                                        posterFull = Regex.Replace(poster, @"_V1.*?.jpg", "_V1._SX1024_SY1024.jpg");
+                                        posterFull = Regex.Replace(poster, @"_V1.*?.jpg", "_V1._SX1280_SY1280.jpg");
                                     }
                                     if (title.Length < 2)
                                         replyText = "Trixie was unable to find a movie name matching: " + body;
@@ -282,8 +297,38 @@ ww - WeightWatcher PointsPlus calc
                                     }
                                     var rout = new Random();
                                     var iout = rout.Next(0, Enumerable.Count(dout.webcams));
-                                    replyText = dout.webcams[iout].organization + " " + dout.webcams[iout].neighborhood + " " + dout.webcams[iout].city + ", " + dout.webcams[iout].state + "\r\n" + dout.webcams[iout].CAMURL;
                                     replyImage = dout.webcams[iout].CURRENTIMAGEURL;
+                                    replyImageCaption = dout.webcams[iout].organization + " " + dout.webcams[iout].neighborhood + " " + dout.webcams[iout].city + ", " + dout.webcams[iout].state + "\r\n" + dout.webcams[iout].CAMURL;
+                                    break;
+
+                                case "/pony":
+                                case "/pone":
+                                    if (body.Length < 2)
+                                    {
+                                        replyText = "I like ponies too.  What kind of pony would you like me to search for?";
+                                        break;
+                                    }
+                                    await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                                    dynamic dpony = JObject.Parse(webClient.DownloadString("https://derpibooru.org/search.json?q=safe," + HttpUtility.UrlEncode(body)));
+                                    if (dpony.search == null)
+                                    {
+                                        replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.";
+                                        break;
+                                    }
+                                    var rpony = new Random();
+                                    var iponymax = Enumerable.Count(dpony.search);
+                                    if (iponymax < 1)
+                                    {
+                                        replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.";
+                                        break;
+                                    }
+                                    if (iponymax > 5)
+                                    {
+                                        iponymax = 5;
+                                    }
+                                    var ipony = rpony.Next(0, iponymax);
+                                    replyImage = "https:" + dpony.search[ipony].representations.large;
+                                    replyImageCaption = "https:" + dpony.search[ipony].image;
                                     break;
 
                                 case "/radar":
@@ -422,7 +467,7 @@ ww - WeightWatcher PointsPlus calc
                                     }
                                     catch
                                     {
-                                        replyText = "Trixie is disappointed that you used !ww incorrectly. The correct usage is: !ww <carbs> <fat> <fiber> <protein>";
+                                        replyText = "Trixie is disappointed that you used /ww incorrectly. The correct usage is: /ww <carbs> <fat> <fiber> <protein>";
                                     }
                                     break;
                             }
@@ -454,7 +499,7 @@ ww - WeightWatcher PointsPlus calc
                                 if (extension == ".gif")
                                     await bot.SendDocument(update.Message.Chat.Id, photo);
                                 else
-                                    await bot.SendPhoto(update.Message.Chat.Id, photo, replyImage);
+                                    await bot.SendPhoto(update.Message.Chat.Id, photo, replyImageCaption == string.Empty ? replyImage : replyImageCaption);
                             }
 
                             if (replyDocument != string.Empty && replyDocument.Length > 5)
