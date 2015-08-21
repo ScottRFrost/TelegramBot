@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using System.Configuration;
+using System.Threading;
 
 namespace TelegramBot
 {
@@ -27,6 +28,7 @@ namespace TelegramBot
                 catch (Exception ex)
                 {
                     Console.WriteLine("MAIN LOOP EXIT ERROR - " + ex);
+                    Thread.Sleep(30000);
                 }
             }
         }
@@ -177,7 +179,7 @@ image - Search for an image
 imdb - Search IMDB for a movie name
 google - Search Google
 outside - Webcam image
-pony - Search for ponies matching a term
+pony - Ponies matching comma separated tags
 radar - Weather radar
 satellite - Weather Satellite
 translate - Translate to english
@@ -479,27 +481,39 @@ ww - WeightWatcher PointsPlus calc
                                 Console.WriteLine(update.Message.Chat.Id + " > " + replyText);
                                 await bot.SendTextMessage(update.Message.Chat.Id, replyText);
                             }
-                                
 
                             if (replyImage != string.Empty && replyImage.Length > 5)
                             {
                                 Console.WriteLine(update.Message.Chat.Id + " > " + replyImage);
                                 await bot.SendChatAction(update.Message.Chat.Id, ChatAction.UploadPhoto);
-                                var ms = new MemoryStream(webClient.DownloadData(replyImage));
-                                var extension = ".jpg";
-                                if (replyImage.Contains(".gif"))
-                                    extension = ".gif";
-                                else if (replyImage.Contains(".png"))
-                                    extension = ".png";
-                                else if (replyImage.Contains(".tif"))
-                                    extension = ".tif";
-                                else if (replyImage.Contains(".bmp"))
-                                    extension = ".bmp";
-                                var photo = new FileToSend("Photo" + extension, ms);
-                                if (extension == ".gif")
-                                    await bot.SendDocument(update.Message.Chat.Id, photo);
-                                else
-                                    await bot.SendPhoto(update.Message.Chat.Id, photo, replyImageCaption == string.Empty ? replyImage : replyImageCaption);
+                                MemoryStream ms;
+                                try
+                                {
+                                    ms = new MemoryStream(webClient.DownloadData(replyImage));
+                                    var extension = ".jpg";
+                                    if (replyImage.Contains(".gif"))
+                                        extension = ".gif";
+                                    else if (replyImage.Contains(".png"))
+                                        extension = ".png";
+                                    else if (replyImage.Contains(".tif"))
+                                        extension = ".tif";
+                                    else if (replyImage.Contains(".bmp"))
+                                        extension = ".bmp";
+                                    var photo = new FileToSend("Photo" + extension, ms);
+                                    if (extension == ".gif")
+                                        await bot.SendDocument(update.Message.Chat.Id, photo);
+                                    else
+                                        await bot.SendPhoto(update.Message.Chat.Id, photo, replyImageCaption == string.Empty ? replyImage : replyImageCaption);
+                                }
+                                catch (System.Net.WebException ex)
+                                {
+                                    Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
+                                    await bot.SendTextMessage(update.Message.Chat.Id, "Trixie was unable to download " + replyImage + " - " + ex.Message);
+                                }
+                                catch (Exception ex){
+                                    Console.WriteLine(replyImage + " Threw: " + ex.Message);
+                                    await bot.SendTextMessage(update.Message.Chat.Id, replyImage);
+                                }
                             }
 
                             if (replyDocument != string.Empty && replyDocument.Length > 5)

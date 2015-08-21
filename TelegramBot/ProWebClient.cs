@@ -14,11 +14,13 @@ namespace TelegramBot
             request.Headers.Add("accept-encoding", "gzip, deflate");
             request.Headers.Add("accept-language", "en-US,en;q=0.5");
             request.Headers.Add("dnt", "1");
-            request.UserAgent = "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:39.0) Gecko/20100101 Firefox/39.0";
+            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:41.0) Gecko/20100101 Firefox/41.0";
+            request.KeepAlive = true;
             request.AllowAutoRedirect = true;
             request.MaximumAutomaticRedirections = 8;
             request.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
             request.Timeout = 30000;
+            request.Referer = "https://duckduckgo.com";
             return request;
         }
     }
