@@ -81,6 +81,9 @@ namespace TelegramBot
 
                             switch (command)
                             {
+                                case "/cat":
+                                    replyImage = "http://thecatapi.com/api/images/get?format=src&type=jpg,png";
+                                    break;
                                 case "/doge":
                                     replyImage = "http://dogr.io/wow/" + body.Replace(",","/").Replace(" ","") + ".png";
                                     replyImageCaption = "wow";
@@ -169,8 +172,10 @@ namespace TelegramBot
                                     break;
 
                                 case "/help":
-                                    replyText = "Trixie understands URLs as well as the following commands: !fat, !forecast, !help, !image, !imdb, !google, !outside, !radar, !satellite, !translate, !translateto, !trixie, !version, !weather, !wiki, !ww";
+                                    replyText = "Trixie understands URLs as well as the following commands: " +
+                                        "/cat /doge /fat /forecast /help /image /imdb /google /map /outside /pony /radar /satellite /translate /translateto /trixie /version /weather /wiki /ww";
                                     /* Send this string of text to BotFather to register the bot's commands:
+cat - Get a picture of a cat
 doge - Dogeify a comma sep list of terms
 fat - Nutrition information
 forecast - Weather forecast
@@ -178,6 +183,7 @@ help - Displays help text
 image - Search for an image 
 imdb - Search IMDB for a movie name
 google - Search Google
+map - Returns a location for the given search
 outside - Webcam image
 pony - Ponies matching comma separated tags
 radar - Weather radar
@@ -267,11 +273,26 @@ ww - WeightWatcher PointsPlus calc
                                     }
                                     break;
 
+                                case "/map":
+                                case "/location":
+                                    if (body == string.Empty)
+                                    {
+                                        replyText = "Usage: /map <Search Text>";
+                                        break;
+                                    }
+                                    dynamic dmap = JObject.Parse(webClient.DownloadString("http://maps.googleapis.com/maps/api/geocode/json?address=" + HttpUtility.UrlEncode(body)));
+                                    if (dmap == null || dmap.results == null || Enumerable.Count(dmap.results) < 1)
+                                        replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                    else
+                                    {
+                                        await bot.SendLocation(update.Message.Chat.Id, (float)dmap.results[0].geometry.location.lat, (float)dmap.results[0].geometry.location.lng);
+                                    }
+                                    break;
                                 case "/google":
                                 case "/bing":
                                     if (body == string.Empty)
                                     {
-                                        replyText = "Usage: /Google <Search Text>";
+                                        replyText = "Usage: /google <Search Text>";
                                         break;
                                     }
                                     await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
@@ -508,7 +529,7 @@ ww - WeightWatcher PointsPlus calc
                                 catch (System.Net.WebException ex)
                                 {
                                     Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
-                                    await bot.SendTextMessage(update.Message.Chat.Id, "Trixie was unable to download " + replyImage + " - " + ex.Message);
+                                    await bot.SendTextMessage(update.Message.Chat.Id, replyImage + " told Trixie " + ex.Message);
                                 }
                                 catch (Exception ex){
                                     Console.WriteLine(replyImage + " Threw: " + ex.Message);
