@@ -268,8 +268,10 @@ ww - WeightWatcher PointsPlus calc
                                         replyText = "Trixie was unable to find a movie name matching: " + body;
                                     else
                                     {
-                                        replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + " | Rating: " + rating + " (" + votes + " votes)\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n" + imdbUrl;
+                                        replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + " | Rating: " + rating + " (" + votes + " votes)\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n";
+                                        webClient.ReferrerUri = imdbUrl;
                                         replyImage = posterFull;
+                                        replyImageCaption = imdbUrl;
                                     }
                                     break;
 
@@ -280,6 +282,7 @@ ww - WeightWatcher PointsPlus calc
                                         replyText = "Usage: /map <Search Text>";
                                         break;
                                     }
+                                    await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                                     dynamic dmap = JObject.Parse(webClient.DownloadString("http://maps.googleapis.com/maps/api/geocode/json?address=" + HttpUtility.UrlEncode(body)));
                                     if (dmap == null || dmap.results == null || Enumerable.Count(dmap.results) < 1)
                                         replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
@@ -529,7 +532,7 @@ ww - WeightWatcher PointsPlus calc
                                 catch (System.Net.WebException ex)
                                 {
                                     Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
-                                    await bot.SendTextMessage(update.Message.Chat.Id, replyImage + " told Trixie " + ex.Message);
+                                    await bot.SendTextMessage(update.Message.Chat.Id, replyImage);
                                 }
                                 catch (Exception ex){
                                     Console.WriteLine(replyImage + " Threw: " + ex.Message);
