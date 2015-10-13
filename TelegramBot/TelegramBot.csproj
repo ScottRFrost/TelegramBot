@@ -95,8 +95,8 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Telegram.Bot, Version=2.0.0.248, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Telegram.Bot.2.0.0.248\lib\portable-net45+win\Telegram.Bot.dll</HintPath>
+    <Reference Include="Telegram.Bot, Version=3.2.1.42167, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Telegram.Bot.3.2.1.42167\lib\portable-net45+win\Telegram.Bot.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
