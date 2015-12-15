@@ -55,13 +55,13 @@ namespace TelegramBot
                 foreach (var update in updates)
                 {
                     offset = update.Id + 1;
-                    ProcessUpdate(bot, update);
+                    ProcessUpdate(bot, update, me);
                 }
                 await Task.Delay(1000);
             }
         }
 
-        static async void ProcessUpdate(Api bot, Update update)
+        static async void ProcessUpdate(Api bot, Update update, User me)
         {
             //Read Configuration
             var telegramKey = ConfigurationManager.AppSettings["TelegramKey"];
@@ -88,12 +88,24 @@ namespace TelegramBot
                     if (text.StartsWith("!", StringComparison.Ordinal))
                         text = "/" + text.Substring(1);
 
+                    //Strip @BotName
+                    text = text.Replace("@" + me.Username, "");
+
                     //Parse
-                    var command = text.Split(' ')[0];
-                    var body = text.Replace(command, "").Trim();
+                    string command;
+                    string body;
+                    if (text.StartsWith("/s/", StringComparison.Ordinal)) {
+                        command = "/s"; //special case for sed
+                        body = text.Substring(2);
+                    }
+                    else
+                    {
+                        command = text.Split(' ')[0];
+                        body = text.Replace(command, "").Trim();
+                    }
                     var sbText = new StringBuilder();
 
-                    switch (command)
+                    switch (command.ToLowerInvariant())
                     {
                         case "/cat":
                             replyImage = "http://thecatapi.com/api/images/get?format=src&type=jpg,png";
@@ -201,6 +213,7 @@ map - Returns a location for the given search
 outside - Webcam image
 pony - Ponies matching comma separated tags
 radar - Weather radar
+remind - Sets a reminder message after X minutes
 satellite - Weather Satellite
 translate - Translate to english
 translateto - Translate to a given language
@@ -377,6 +390,49 @@ ww - WeightWatcher PointsPlus calc
                             replyDocument = "http://api.wunderground.com/api/" + wundergroundKey + "/animatedradar/q/" + body + ".gif?num=8&delay=50&interval=30";
                             break;
 
+                        case "/remind":
+                        case "/remindme":
+                        case "/reminder":
+                            if (body.Length < 2 || !body.Contains(" "))
+                                replyText = "Usage: /remind <minutes> <Reminder Text>";
+                            else
+                            {
+                                var delayMinutesString = body.Substring(0, body.IndexOf(" ", StringComparison.Ordinal));
+                                int delayMinutes;
+                                if (int.TryParse(delayMinutesString, out delayMinutes))
+                                {
+                                    if (delayMinutes > 1440 || delayMinutes < 1)
+                                    {
+                                        replyText = "Reminders can not be set for longer than 1440 minutes (24 hours).";
+                                    }
+                                    else
+                                    {
+                                        var delayedMessage = DelayedMessage(bot, update.Message.Chat.Id, "@" + update.Message.From.Username + " Reminder: " + body.Substring(delayMinutesString.Length).Trim(), delayMinutes);
+                                        replyText = "OK, I'll remind you at " + DateTime.Now.AddMinutes(delayMinutes).ToString("MM/dd/yyyy HH:mm") + " (US Eastern)";
+                                    }
+                                }
+                                else
+                                {
+                                    replyText = "Usage: /remind <minutes as positive integer> <Reminder Text>";
+                                }
+                            }
+                            break;
+
+                        case "/s":
+                            if (body.Length < 2 || update.Message.ReplyToMessage == null)
+                                replyText = "This must be done as a reply in the format /s/replace this/replace with/";
+                            else
+                            {
+                                var sed = body.Split('/');
+                                if (sed.Length != 4)
+                                    replyText = "The only sed command parsed is /s/replace this/replace with/";
+                                else
+                                {
+                                    replyText = update.Message.ReplyToMessage.Text.Replace(sed[1], sed[2]);
+                                }
+                            }
+                            break;
+
                         case "/satellite":
                             if (body.Length < 2)
                                 body = "Cincinnati, OH";
@@ -438,7 +494,20 @@ ww - WeightWatcher PointsPlus calc
                             var pods = queryResult.SelectNodes("pod");
                             foreach (var pod in pods.Cast<XmlNode>().Where(pod => pod.Attributes != null && pod.Attributes["title"].Value != "Input interpretation"))
                             {
-                                try
+                                if (replyImage == string.Empty) //Try to grab an image
+                                {
+                                    try
+                                    {
+                                        var subPodImage = pod.SelectSingleNode("subpod/img");
+                                        replyImage = subPodImage.Attributes["src"].Value.Trim();
+                                    }
+                                    catch
+                                    {
+                                        //Don't care
+                                    }
+                                }
+
+                                try //Parse plaintext
                                 {
                                     var subPodPlainText = pod.SelectSingleNode("subpod/plaintext");
                                     if (subPodPlainText == null || subPodPlainText.InnerText.Trim().Length <= 0) continue;
@@ -452,6 +521,9 @@ ww - WeightWatcher PointsPlus calc
                                 {
                                     //Don't care
                                 }
+
+                                
+
                             }
                             break;
 
@@ -529,9 +601,9 @@ ww - WeightWatcher PointsPlus calc
                         {
                             ms = new MemoryStream(webClient.DownloadData(replyImage));
                             var extension = ".jpg";
-                            if (replyImage.Contains(".gif"))
+                            if (replyImage.Contains(".gif") || replyImage.Contains("image/gif"))
                                 extension = ".gif";
-                            else if (replyImage.Contains(".png"))
+                            else if (replyImage.Contains(".png") || replyImage.Contains("image/png"))
                                 extension = ".png";
                             else if (replyImage.Contains(".tif"))
                                 extension = ".tif";
@@ -571,6 +643,13 @@ ww - WeightWatcher PointsPlus calc
             {
                 Console.WriteLine("ERROR - " + ex);
             }
+        }
+
+        static async Task DelayedMessage(Api bot, long ChatID, string message, int minutesToWait)
+        {
+            await Task.Delay(minutesToWait * 60000);
+            await bot.SendTextMessage(ChatID, message);
+
         }
     }
 }
