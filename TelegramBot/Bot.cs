@@ -235,6 +235,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dimg = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=3"));
+                            webClient.Headers.Remove("Authorization");
                             if (dimg.d == null || dimg.d.results == null || Enumerable.Count(dimg.d.results) < 1)
                             {
                                 replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
@@ -259,6 +260,8 @@ ww - WeightWatcher PointsPlus calc
                             break;
 
                         case "/imdb":
+                        case "/rt":
+                        case "/movie":
                             if (body == string.Empty)
                             {
                                 replyText = "Usage: /imdb <Movie Title>";
@@ -268,6 +271,7 @@ ww - WeightWatcher PointsPlus calc
                             //Search Bing
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dimdb = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27imdb+" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1"));
+                            webClient.Headers.Remove("Authorization");
                             if (dimdb.d == null || dimdb.d.results == null ||
                                 Enumerable.Count(dimdb.d.results) < 1)
                             {
@@ -295,7 +299,26 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Trixie was unable to find a movie name matching: " + body;
                             else
                             {
-                                replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + " | Rating: " + rating + " (" + votes + " votes)\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n";
+                                //Try for RT score scrape
+                                webClient.Headers.Add("Authorization", "Basic " + bingKey);
+                                dynamic drt = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27rottentomatoes+" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1"));
+                                webClient.Headers.Remove("Authorization");
+                                if (drt.d != null && drt.d.results != null && Enumerable.Count(drt.d.results) > 0)
+                                {
+                                    var rt = webClient.DownloadString((string)drt.d.results[0].Url);
+                                    var rtCritic = Regex.Match(rt, @"<div class=""critic-score meter"">.*?<span itemprop=""ratingValue"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtAudience = Regex.Match(rt, @"<div class=""audience-score meter"">.*?<span.*?>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + "\r\nIMDb: " + rating + " (" + votes + " votes) | RT critic: " + rtCritic + "% | RT audience: " + rtAudience + "\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n";
+                                }
+                                else
+                                {
+                                    var rt = webClient.DownloadString("http://www.rottentomatoes.com/search/?search=" + HttpUtility.UrlEncode(body));
+                                    var rtCritic = Regex.Match(rt, @"<div class=""critic-score meter"">.*?<span itemprop=""ratingValue"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtAudience = Regex.Match(rt, @"<div class=""audience-score meter"">.*?<span.*?>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + " | IMDb: " + rating + " (" + votes + " votes)\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n";
+                                }
+
+                                //Set referrer URI to grab IMDB poster
                                 webClient.ReferrerUri = imdbUrl;
                                 replyImage = posterFull;
                                 replyImageCaption = imdbUrl;
@@ -328,6 +351,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dgoog = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1"));
+                            webClient.Headers.Remove("Authorization");
                             if (dgoog.d == null || dgoog.d.results == null || Enumerable.Count(dgoog.d.results) < 1)
                                 replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
@@ -455,6 +479,7 @@ ww - WeightWatcher PointsPlus calc
                             var query = body.Substring(body.IndexOf(" ", StringComparison.Ordinal) + 1);
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dtto = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Bing/MicrosoftTranslator/v1/Translate?Text=%27" + HttpUtility.UrlEncode(query) + "%27&To=%27" + lang + "%27&$format=json"));
+                            webClient.Headers.Remove("Authorization");
                             if (dtto.d == null || dtto.d.results == null || Enumerable.Count(dtto.d.results) < 1 || dtto.d.results[0].Text == null)
                                 replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
@@ -470,6 +495,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dtrans = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Bing/MicrosoftTranslator/v1/Translate?Text=%27" + HttpUtility.UrlEncode(body) + "%27&To=%27en%27&$format=json"));
+                            webClient.Headers.Remove("Authorization");
                             if (dtrans.d == null || dtrans.d.results == null || Enumerable.Count(dtrans.d.results) < 1 || dtrans.d.results[0].Text == null)
                                 replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else

@@ -25,7 +25,7 @@ namespace TelegramBot
             request.Headers.Add("accept-encoding", "gzip, deflate");
             request.Headers.Add("accept-language", "en-US,en;q=0.5");
             request.Headers.Add("dnt", "1");
-            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:42.0) Gecko/20100101 Firefox/42.0";
+            request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:43.0) Gecko/20100101 Firefox/43.0";
             request.KeepAlive = true;
             request.AllowAutoRedirect = true;
             request.MaximumAutomaticRedirections = 8;
