@@ -425,7 +425,7 @@ ww - WeightWatcher PointsPlus calc
                         case "/radar":
                             if (body.Length < 2)
                                 body = "Cincinnati, OH";
-                            replyDocument = "http://api.wunderground.com/api/" + wundergroundKey + "/animatedradar/q/" + body + ".gif?num=8&delay=50&interval=30";
+                            replyDocument = "http://api.wunderground.com/api/" + wundergroundKey + "/animatedradar/q/" + body + ".gif?newmaps=1&num=15&width=1024&height=1024";
                             break;
 
                         case "/remind":
@@ -479,7 +479,11 @@ ww - WeightWatcher PointsPlus calc
                             if (rsat.satellite == null || rsat.satellite.image_url == null)
                                 replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
                             else
-                                replyImage = rsat.satellite.image_url.Replace("height=300", "height=1280").Replace("width=300", "width=1280").Replace("radius=75", "radius=250");
+                            {
+                                string saturl = rsat.satellite.image_url;
+                                replyImage = saturl.Replace("height=300", "height=1280").Replace("width=300", "width=1280").Replace("radius=75", "radius=250");
+                                replyImageCaption = body + " as of " + DateTime.Now.ToString("MM/dd/yyy HH:mm:ss");
+                            }
                             break;
 
                         case "/translateto":
