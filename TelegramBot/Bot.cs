@@ -198,8 +198,8 @@ namespace TelegramBot
                             break;
 
                         case "/help":
-                            replyText = "Trixie understands URLs as well as the following commands: " +
-                                "/cat /doge /fat /forecast /help /image /imdb /google /map /outside /pony /radar /satellite /translate /translateto /trixie /version /weather /wiki /ww";
+                            replyText = "The great & powerful Trixie understands the following commands: " +
+                                "/cat /doge /fat /forecast /help /image /imdb /google /joke /map /outside /pony /radar /satellite /translate /translateto /trixie /version /weather /wiki /ww";
                             /* Send this string of text to BotFather to register the bot's commands:
 cat - Get a picture of a cat
 doge - Dogeify a comma sep list of terms
@@ -210,6 +210,7 @@ image - Search for an image
 imdb - Search IMDB for a movie name
 google - Search Google
 map - Returns a location for the given search
+joke - Returns a random joke from /r/jokes on Reddit
 outside - Webcam image
 pony - Ponies matching comma separated tags
 radar - Weather radar
@@ -323,6 +324,19 @@ ww - WeightWatcher PointsPlus calc
                                 replyImage = posterFull;
                                 replyImageCaption = imdbUrl;
                             }
+                            break;
+
+                        case "/joke":
+                            await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            dynamic djoke = JObject.Parse(webClient.DownloadString("https://api.reddit.com/r/jokes/top?t=day&limit=5"));
+                            var rjoke = new Random();
+                            var ijokemax = Enumerable.Count(djoke.data.children);
+                            if (ijokemax > 4)
+                            {
+                                ijokemax = 4;
+                            }
+                            var ijoke = rjoke.Next(0, ijokemax);
+                            replyText = djoke.data.children[ijoke].data.title.ToString() + " " + djoke.data.children[ijoke].data.selftext.ToString();
                             break;
 
                         case "/map":
