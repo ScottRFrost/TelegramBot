@@ -121,7 +121,7 @@ namespace TelegramBot
                             var firstUrl = Regex.Match(search, @"<a class=""food-search-result-name"" href=""([\w:\/\-\._]*)""").Groups[1].Value.Trim();
                             if (firstUrl == string.Empty)
                             {
-                                replyText = "The Great & Powerful Pwnbot was unable to find a food name matching: " + body;
+                                replyText = "The Great & Powerful Meeseeks was unable to find a food name matching: " + body;
                                 break;
                             }
                             var ck = webClient.DownloadString(firstUrl).Replace("\r", "").Replace("\n", "");
@@ -176,7 +176,7 @@ namespace TelegramBot
                             dynamic dfor = JObject.Parse(webClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/forecast/q/" + body + ".json"));
                             if (dfor.forecast == null || dfor.forecast.txt_forecast == null)
                             {
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
                                 break;
                             }
                             for (var ifor = 0; ifor < Enumerable.Count(dfor.forecast.txt_forecast.forecastday) - 1; ifor++)
@@ -186,8 +186,8 @@ namespace TelegramBot
                             break;
 
                         case "/help":
-                            replyText = "Pwnbot understands URLs as well as the following commands: " +
-                                "/cat /doge /fat /forecast /help /image /imdb /google /map /outside /radar /satellite /translate /translateto /Pwnbot /version /weather /wiki /ww";
+                            replyText = "Meeseeks understands URLs as well as the following commands: " +
+                                "/cat /doge /fat /forecast /help /image /imdb /google /map /outside /radar /satellite /translate /translateto /Meeseeks /version /weather /wiki /ww";
                             /* Send this string of text to BotFather to register the bot's commands:
 cat - Get a picture of a cat
 doge - Dogeify a comma sep list of terms
@@ -203,7 +203,7 @@ radar - Weather radar
 satellite - Weather Satellite
 translate - Translate to english
 translateto - Translate to a given language
-pwnbot - Wolfram Alpha logic search
+Meeseeks - Wolfram Alpha logic search
 version - Display version info
 weather - Current weather conditions
 wiki - Search Wikipedia
@@ -223,7 +223,7 @@ ww - WeightWatcher PointsPlus calc
                             dynamic dimg = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=3"));
                             if (dimg.d == null || dimg.d.results == null || Enumerable.Count(dimg.d.results) < 1)
                             {
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                                 break;
                             }
                             var rimg = new Random();
@@ -257,7 +257,7 @@ ww - WeightWatcher PointsPlus calc
                             if (dimdb.d == null || dimdb.d.results == null ||
                                 Enumerable.Count(dimdb.d.results) < 1)
                             {
-                                replyText = "Pwnbot was unable to find a movie name matching:" + body;
+                                replyText = "Meeseeks was unable to find a movie name matching:" + body;
                                 break;
                             }
 
@@ -278,7 +278,7 @@ ww - WeightWatcher PointsPlus calc
                                 posterFull = Regex.Replace(poster, @"_V1.*?.jpg", "_V1._SX1280_SY1280.jpg");
                             }
                             if (title.Length < 2)
-                                replyText = "Pwnbot was unable to find a movie name matching: " + body;
+                                replyText = "Meeseeks was unable to find a movie name matching: " + body;
                             else
                             {
                                 replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + " | Rating: " + rating + " (" + votes + " votes)\r\n" + HttpUtility.HtmlDecode(plot) + "\r\n";
@@ -298,7 +298,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dmap = JObject.Parse(webClient.DownloadString("http://maps.googleapis.com/maps/api/geocode/json?address=" + HttpUtility.UrlEncode(body)));
                             if (dmap == null || dmap.results == null || Enumerable.Count(dmap.results) < 1)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
                             {
                                 await bot.SendLocation(update.Message.Chat.Id, (float)dmap.results[0].geometry.location.lat, (float)dmap.results[0].geometry.location.lng);
@@ -315,7 +315,7 @@ ww - WeightWatcher PointsPlus calc
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dgoog = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1"));
                             if (dgoog.d == null || dgoog.d.results == null || Enumerable.Count(dgoog.d.results) < 1)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
                             {
                                 var rgoog = new Random();
@@ -331,7 +331,7 @@ ww - WeightWatcher PointsPlus calc
                             dynamic dout = JObject.Parse(webClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/webcams/q/" + body + ".json"));
                             if (dout.webcams == null)
                             {
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
                                 break;
                             }
                             var rout = new Random();
@@ -353,7 +353,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic rsat = JObject.Parse(webClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/satellite/q/" + body + ".json"));
                             if (rsat.satellite == null || rsat.satellite.image_url == null)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
                             else
                                 replyImage = rsat.satellite.image_url.Replace("height=300", "height=1280").Replace("width=300", "width=1280").Replace("radius=75", "radius=250");
                             break;
@@ -370,7 +370,7 @@ ww - WeightWatcher PointsPlus calc
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dtto = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Bing/MicrosoftTranslator/v1/Translate?Text=%27" + HttpUtility.UrlEncode(query) + "%27&To=%27" + lang + "%27&$format=json"));
                             if (dtto.d == null || dtto.d.results == null || Enumerable.Count(dtto.d.results) < 1 || dtto.d.results[0].Text == null)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
                                 replyText = dtto.d.results[0].Text;
                             break;
@@ -385,15 +385,15 @@ ww - WeightWatcher PointsPlus calc
                             webClient.Headers.Add("Authorization", "Basic " + bingKey);
                             dynamic dtrans = JObject.Parse(webClient.DownloadString("https://api.datamarket.azure.com/Bing/MicrosoftTranslator/v1/Translate?Text=%27" + HttpUtility.UrlEncode(body) + "%27&To=%27en%27&$format=json"));
                             if (dtrans.d == null || dtrans.d.results == null || Enumerable.Count(dtrans.d.results) < 1 || dtrans.d.results[0].Text == null)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                             else
                                 replyText = dtrans.d.results[0].Text;
                             break;
 
-                        case "/Pwnbot":
+                        case "/Meeseeks":
                             if (body == string.Empty)
                             {
-                                replyText = "Usage: /Pwnbot <Query>";
+                                replyText = "Usage: /Meeseeks <Query>";
                                 break;
                             }
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
@@ -402,7 +402,7 @@ ww - WeightWatcher PointsPlus calc
                             var queryResult = xmlDoc.SelectSingleNode("/queryresult");
                             if (queryResult == null || queryResult.Attributes == null || queryResult.Attributes["success"].Value != "true")
                             {
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try harder next time.";
                                 break;
                             }
                             var pods = queryResult.SelectNodes("pod");
@@ -435,7 +435,7 @@ ww - WeightWatcher PointsPlus calc
                             await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dwthr = JObject.Parse(webClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/conditions/q/" + body + ".json"));
                             if (dwthr.current_observation == null)
-                                replyText = "You have disappointed Pwnbot.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
+                                replyText = "You have disappointed Meeseeks.  \"" + body + "\" is bullshit and you know it.  Try \"City, ST\" or \"City, Country\" next time.";
                             else
                                 replyText =
                                     dwthr.current_observation.display_location.full + " Conditions: " +
@@ -477,7 +477,7 @@ ww - WeightWatcher PointsPlus calc
                             }
                             catch
                             {
-                                replyText = "Pwnbot is disappointed that you used /ww incorrectly. The correct usage is: /ww <carbs> <fat> <fiber> <protein>";
+                                replyText = "Meeseeks is disappointed that you used /ww incorrectly. The correct usage is: /ww <carbs> <fat> <fiber> <protein>";
                             }
                             break;
                     }
