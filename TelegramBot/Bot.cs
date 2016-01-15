@@ -1,23 +1,23 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
-using Newtonsoft.Json.Linq;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using System.Configuration;
-using System.Threading;
 
 namespace TelegramBot
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Potential Code Quality Issues", "RECS0022:A catch clause that catches System.Exception and has an empty body", Justification = "Lazy")]
-    class Bot
+class Bot
     {
-        static void Main() 
+        static void Main()
         {
             while (true)
             {
@@ -32,7 +32,6 @@ namespace TelegramBot
                 }
             }
         }
-
 
         static async Task MainLoop()
         {
@@ -75,6 +74,7 @@ namespace TelegramBot
                 var webClient = new ProWebClient();
                 var text = update.Message.Text;
                 var replyText = string.Empty;
+                var replyTextMarkdown = string.Empty;
                 var replyImage = string.Empty;
                 var replyImageCaption = string.Empty;
                 var replyDocument = string.Empty;
@@ -84,7 +84,7 @@ namespace TelegramBot
                     //Log to console
                     Console.WriteLine(update.Message.Chat.Id + " - " + update.Message.From.Username + " - " + text);
 
-                    //Allow ! or / 
+                    //Allow ! or /
                     if (text.StartsWith("!", StringComparison.Ordinal))
                         text = "/" + text.Substring(1);
 
@@ -94,7 +94,8 @@ namespace TelegramBot
                     //Parse
                     string command;
                     string body;
-                    if (text.StartsWith("/s/", StringComparison.Ordinal)) {
+                    if (text.StartsWith("/s/", StringComparison.Ordinal))
+                    {
                         command = "/s"; //special case for sed
                         body = text.Substring(2);
                     }
@@ -107,9 +108,44 @@ namespace TelegramBot
 
                     switch (command.ToLowerInvariant())
                     {
+                        case "/beer":
+                            if (body == string.Empty)
+                            {
+                                replyText = "Usage: /beer <Name of beer>";
+                                break;
+                            }
+
+                            await bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            var beerSearch = webClient.DownloadString("http://www.beeradvocate.com/search/?q=" + HttpUtility.UrlEncode(body) + "&qt=beer").Replace("\r", "").Replace("\n", "");
+
+                            //Load First Result
+                            var firstBeer = Regex.Match(beerSearch, @"<div id=""ba-content"">.*?<ul>.*?<li>.*?<a href=""(.*?)"">").Groups[1].Value.Trim();
+                            if (firstBeer == string.Empty)
+                            {
+                                replyText = "The Great & Powerful Trixie was unable to find a beer name matching: " + body;
+                                break;
+                            }
+                            var beer = webClient.DownloadString("http://www.beeradvocate.com" + firstBeer).Replace("\r", "").Replace("\n", "");
+                            var beerName = Regex.Match(beer, @"<title>(.*?)</title>").Groups[1].Value.Replace(" | BeerAdvocate","").Trim();
+                            beer = Regex.Match(beer, @"<div id=""ba-content"">.*?<table.*?<tr>(.*)<b>View:</b>").Groups[1].Value.Trim();
+                            replyImage = Regex.Match(beer, @"src=""(.*?)""").Groups[1].Value.Trim();
+                            replyImageCaption = "http://www.beeradvocate.com" + firstBeer;
+                            var beerScore = Regex.Match(beer, @"<span class=""BAscore_big ba-score"">(.*?)</span>").Groups[1].Value.Trim();
+                            var beerScoreText = Regex.Match(beer, @"<span class=""ba-score_text"">(.*?)</span>").Groups[1].Value.Trim();
+                            var beerbroScore = Regex.Match(beer, @"<span class=""BAscore_big ba-bro_score"">(.*?)</span>").Groups[1].Value.Trim();
+                            var beerbroScoreText = Regex.Match(beer, @"<b class=""ba-bro_text"">(.*?)</b>").Groups[1].Value.Trim();
+                            var beerHads = Regex.Match(beer, @"<span class=""ba-ratings"">(.*?)</span>").Groups[1].Value.Trim();
+                            var beerAvg = Regex.Match(beer, @"<span class=""ba-ravg"">(.*?)</span>").Groups[1].Value.Trim();
+                            var beerStyle = Regex.Match(beer, @"<b>Style \| ABV</b>.*?<b>(.*?)</b>").Groups[1].Value.Trim();
+                            var beerAbv = Regex.Match(beer, @"<b>Style \| ABV</b>.*</a>(.*?)<a").Groups[1].Value.Replace("|", "").Trim();
+                            sbText.Append(beerName.Replace("|", "- " + beerStyle + " by") + "\r\nScore: " + beerScore + " (" + beerScoreText + ") | Bros: " + beerbroScore + " (" + beerbroScoreText + ") | Avg: " + beerAvg + " (" + beerHads + " hads)\r\nABV: " + beerAbv + " | ");
+                            sbText.Append(HttpUtility.HtmlDecode(Regex.Match(beer, @"ABV</a>(.*?)<!--").Groups[1].Value.Trim().Replace("<b>", "").Replace("</b>", "").Replace("<br>", " ").Replace("</br>", "").Replace("Notes &","\r\nNotes &").Trim()));
+                            break;
+
                         case "/cat":
                             replyImage = "http://thecatapi.com/api/images/get?format=src&type=jpg,png";
                             break;
+
                         case "/doge":
                             replyImage = "http://dogr.io/wow/" + body.Replace(",", "/").Replace(" ", "") + ".png";
                             replyImageCaption = "wow";
@@ -136,7 +172,7 @@ namespace TelegramBot
                                 replyText = "The Great & Powerful Trixie was unable to find a food name matching: " + body;
                                 break;
                             }
-                            var ck = webClient.DownloadString(firstUrl).Replace("\r", "").Replace("\n", "");
+                            var food = webClient.DownloadString(firstUrl).Replace("\r", "").Replace("\n", "");
 
                             //Scrape it
                             var label = string.Empty;
@@ -144,18 +180,20 @@ namespace TelegramBot
                             var carbs = 0.0;
                             var fat = 0.0;
                             var fiber = 0.0;
-                            sbText.Append(Regex.Match(ck, @"<title>(.*)\ \|.*<\/title>").Groups[1].Value.Replace("Calories in ", "").Trim() + " per "); //Name of item
-                            sbText.Append(Regex.Match(ck, @"<select name=""units"".*?<option.*?>(.*?)<\/option>", RegexOptions.IgnoreCase).Groups[1].Value.Trim() + "\r\n"); //Unit
-                            foreach (Match fact in Regex.Matches(ck, @"<td class=""(calories|label|amount)"">([a-zA-Z0-9\ &;<>=\/\""\.]*)<\/td>"))
+                            sbText.Append(Regex.Match(food, @"<title>(.*)\ \|.*<\/title>").Groups[1].Value.Replace("Calories in ", "").Trim() + " per "); //Name of item
+                            sbText.Append(Regex.Match(food, @"<select name=""units"".*?<option.*?>(.*?)<\/option>", RegexOptions.IgnoreCase).Groups[1].Value.Trim() + "\r\n"); //Unit
+                            foreach (Match fact in Regex.Matches(food, @"<td class=""(calories|label|amount)"">([a-zA-Z0-9\ &;<>=\/\""\.]*)<\/td>"))
                             {
                                 switch (fact.Groups[1].Value.Trim().ToLowerInvariant())
                                 {
                                     case "calories":
                                         sbText.Append("Calories: " + fact.Groups[2].Value.Replace("Calories&nbsp;<span class=\"amount\">", "").Replace("</span>", "") + ", ");
                                         break;
+
                                     case "label":
                                         label = fact.Groups[2].Value.Trim();
                                         break;
+
                                     case "amount":
                                         sbText.Append(label + ": " + fact.Groups[2].Value + ", ");
                                         switch (label.ToLowerInvariant())
@@ -163,12 +201,15 @@ namespace TelegramBot
                                             case "protein":
                                                 protein = Convert.ToDouble(fact.Groups[2].Value.Replace("mg", "").Replace("g", "").Replace("&lt;", "").Replace("&gt;", ""));
                                                 break;
+
                                             case "total carbs.":
                                                 carbs = Convert.ToDouble(fact.Groups[2].Value.Replace("mg", "").Replace("g", "").Replace("&lt;", "").Replace("&gt;", ""));
                                                 break;
+
                                             case "total fat":
                                                 fat = Convert.ToDouble(fact.Groups[2].Value.Replace("mg", "").Replace("g", "").Replace("&lt;", "").Replace("&gt;", ""));
                                                 break;
+
                                             case "dietary fiber":
                                                 fiber = Convert.ToDouble(fact.Groups[2].Value.Replace("mg", "").Replace("g", "").Replace("&lt;", "").Replace("&gt;", ""));
                                                 break;
@@ -198,7 +239,7 @@ namespace TelegramBot
                             break;
 
                         case "/help":
-                            replyText = "The great & powerful Trixie understands the following commands: " +
+                            replyText = "The Great & powerful Trixie understands the following commands: " +
                                 "/cat /doge /fat /forecast /help /image /imdb /google /joke /map /outside /pony /radar /satellite /translate /translateto /trixie /version /weather /wiki /ww";
                             /* Send this string of text to BotFather to register the bot's commands:
 cat - Get a picture of a cat
@@ -206,7 +247,7 @@ doge - Dogeify a comma sep list of terms
 fat - Nutrition information
 forecast - Weather forecast
 help - Displays help text
-image - Search for an image 
+image - Search for an image
 imdb - Search IMDB for a movie name
 google - Search Google
 map - Returns a location for the given search
@@ -355,6 +396,7 @@ ww - WeightWatcher PointsPlus calc
                                 await bot.SendLocation(update.Message.Chat.Id, (float)dmap.results[0].geometry.location.lat, (float)dmap.results[0].geometry.location.lng);
                             }
                             break;
+
                         case "/google":
                         case "/bing":
                             if (body == string.Empty)
@@ -466,7 +508,7 @@ ww - WeightWatcher PointsPlus calc
                                     replyText = "The only sed command parsed is /s/replace this/replace with/";
                                 else
                                 {
-                                    replyText = update.Message.ReplyToMessage.Text.Replace(sed[1], sed[2]);
+                                    replyTextMarkdown = "*" + update.Message.ReplyToMessage.From.FirstName + " " + update.Message.ReplyToMessage.From.LastName + "* \r\n" + update.Message.ReplyToMessage.Text.Replace(sed[1], sed[2]);
                                 }
                             }
                             break;
@@ -565,9 +607,6 @@ ww - WeightWatcher PointsPlus calc
                                 {
                                     //Don't care
                                 }
-
-                                
-
                             }
                             break;
 
@@ -635,6 +674,11 @@ ww - WeightWatcher PointsPlus calc
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyText);
                         await bot.SendTextMessage(update.Message.Chat.Id, replyText);
                     }
+                    if (replyTextMarkdown != string.Empty)
+                    {
+                        Console.WriteLine(update.Message.Chat.Id + " > " + replyTextMarkdown);
+                        await bot.SendTextMessage(update.Message.Chat.Id, replyTextMarkdown, false, 0, null, true);
+                    }
 
                     if (replyImage != string.Empty && replyImage.Length > 5)
                     {
@@ -680,8 +724,12 @@ ww - WeightWatcher PointsPlus calc
                         var document = new FileToSend(filename, ms);
                         await bot.SendDocument(update.Message.Chat.Id, document);
                     }
-
                 }
+            }
+            catch (System.Net.WebException ex)
+            {
+                Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
+                await bot.SendTextMessage(update.Message.Chat.Id, "The Great & Powerful Trixie got bored while waiting for that to download.  Try later.");
             }
             catch (Exception ex)
             {
@@ -693,7 +741,6 @@ ww - WeightWatcher PointsPlus calc
         {
             await Task.Delay(minutesToWait * 60000);
             await bot.SendTextMessage(ChatID, message);
-
         }
     }
 }
