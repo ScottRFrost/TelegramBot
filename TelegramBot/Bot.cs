@@ -49,13 +49,25 @@ class Bot
             var offset = 0;
             while (true)
             {
-                var updates = await bot.GetUpdates(offset);
-
+                var updates = new Update[0];
+                try
+                {
+                    updates = await bot.GetUpdates(offset);
+                }
+                catch(TaskCanceledException)
+                {
+                    //Don't care
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine("ERROR WHILE GETTIGN UPDATES - " + ex);
+                }
                 foreach (var update in updates)
                 {
                     offset = update.Id + 1;
                     ProcessUpdate(bot, update, me);
                 }
+
                 await Task.Delay(1000);
             }
         }
