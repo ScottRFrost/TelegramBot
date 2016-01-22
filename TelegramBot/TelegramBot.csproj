@@ -95,17 +95,15 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="Telegram.Bot, Version=7.1.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Telegram.Bot.7.1.0\lib\net45\Telegram.Bot.dll</HintPath>
+    <Reference Include="Telegram.Bot, Version=8.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Telegram.Bot.8.0.0\lib\net45\Telegram.Bot.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ProWebClient.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="ProHttpClient.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
