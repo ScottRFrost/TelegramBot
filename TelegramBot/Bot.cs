@@ -728,14 +728,22 @@ ww - WeightWatcher PointsPlus calc
                                 break;
                             }
                             bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
-                            dynamic dwiki = JObject.Parse(httpClient.DownloadString("https://en.wikipedia.org/w/api.php?action=parse&prop=text&uselang=en&format=json&page=" + HttpUtility.UrlEncode(body)).Result);
-                            string wikiBody = Regex.Replace(dwiki.parse.text.ToString(), "<.*?>", string.Empty).ToString();
-                            wikiBody = HttpUtility.HtmlDecode(wikiBody.Substring(16, wikiBody.Length - 16).Replace("\\n", " ").Replace("\\r", "").Replace("\\", "").Replace("\\\"", "\"").Replace("   ", " ").Replace("  ", " ").Replace("  ", " "));
-                            if (wikiBody.Length > 800)
-                            { 
-                                wikiBody = wikiBody.Substring(0, 800) + "...";
+                            var dwiki = JObject.Parse(httpClient.DownloadString("https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&redirects=true&titles=" + HttpUtility.UrlEncode(body)).Result);
+                            if (dwiki["query"].HasValues && dwiki["query"]["pages"].HasValues)
+                            {
+                                var page = dwiki["query"]["pages"].First().First();
+                                if (Convert.ToString(page["pageid"]).Length > 0)
+                                    replyTextMarkdown = "*" + page["title"] + "*\r\n" + page["extract"] + "\r\n" + "https://en.wikipedia.org/?curid=" + page["pageid"];
+                                else
+                                {
+                                    replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.";
+                                }
                             }
-                            replyText = dwiki.parse.title + " | " + wikiBody;
+                            else
+                            {
+                                replyText = "You have disappointed Trixie.  \"" + body + "\" is bullshit and you know it.";
+                                
+                            }
                             break;
 
                         case "/ww":
