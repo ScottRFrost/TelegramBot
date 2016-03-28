@@ -139,8 +139,8 @@ class Bot
                             }
                             var beer = httpClient.DownloadString("http://www.beeradvocate.com" + firstBeer).Result.Replace("\r", "").Replace("\n", "");
                             var beerName = Regex.Match(beer, @"<title>(.*?)</title>").Groups[1].Value.Replace(" | BeerAdvocate", string.Empty).Trim();
-                            beer = Regex.Match(beer, @"<div id=""ba-content"">.*?<table.*?<tr>(.*)<b>View:</b>").Groups[1].Value.Trim();
-                            replyImage = Regex.Match(beer, @"src=""(.*?)""").Groups[1].Value.Trim();
+                            beer = Regex.Match(beer, @"<div id=""ba-content"">.*?<div>(.*?)<div style=""clear:both;"">").Groups[1].Value.Trim();
+                            replyImage = Regex.Match(beer, @"img src=""(.*?)""").Groups[1].Value.Trim();
                             replyImageCaption = "http://www.beeradvocate.com" + firstBeer;
                             var beerScore = Regex.Match(beer, @"<span class=""BAscore_big ba-score"">(.*?)</span>").Groups[1].Value.Trim();
                             var beerScoreText = Regex.Match(beer, @"<span class=""ba-score_text"">(.*?)</span>").Groups[1].Value.Trim();
@@ -148,10 +148,11 @@ class Bot
                             var beerbroScoreText = Regex.Match(beer, @"<b class=""ba-bro_text"">(.*?)</b>").Groups[1].Value.Trim();
                             var beerHads = Regex.Match(beer, @"<span class=""ba-ratings"">(.*?)</span>").Groups[1].Value.Trim();
                             var beerAvg = Regex.Match(beer, @"<span class=""ba-ravg"">(.*?)</span>").Groups[1].Value.Trim();
-                            var beerStyle = Regex.Match(beer, @"<b>Style \| ABV</b>.*?<b>(.*?)</b>").Groups[1].Value.Trim();
-                            var beerAbv = Regex.Match(beer, @"<b>Style \| ABV</b>.*</a>(.*?)<a").Groups[1].Value.Replace("|", "").Trim();
+                            var beerStyle = Regex.Match(beer, @"<b>Style:</b>.*?<b>(.*?)</b>").Groups[1].Value.Trim();
+                            var beerAbv = beer.Substring(beer.IndexOf("(ABV):", StringComparison.Ordinal) + 10, 7).Trim();
+                            var beerDescription = Regex.Match(beer, @"<b>Notes / Commercial Description:</b>(.*?)</div>").Groups[1].Value.Replace("|", "").Trim();
                             stringBuilder.Append(beerName.Replace("|", "- " + beerStyle + " by") + "\r\nScore: " + beerScore + " (" + beerScoreText + ") | Bros: " + beerbroScore + " (" + beerbroScoreText + ") | Avg: " + beerAvg + " (" + beerHads + " hads)\r\nABV: " + beerAbv + " | ");
-                            stringBuilder.Append(HttpUtility.HtmlDecode(Regex.Match(beer, @"ABV</a>(.*?)<!--").Groups[1].Value.Trim().Replace("<b>", string.Empty).Replace("</b>", string.Empty).Replace("<br>", " ").Replace("</br>", string.Empty).Replace("Notes &", "\r\nNotes &").Trim()));
+                            stringBuilder.Append(HttpUtility.HtmlDecode(beerDescription).Replace("<br>"," ").Trim());
                             break;
 
                         case "/cat":
