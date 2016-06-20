@@ -791,7 +791,7 @@ ww - WeightWatcher PointsPlus calc
                     if (!string.IsNullOrEmpty(replyTextMarkdown))
                     {
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyTextMarkdown);
-                        await bot.SendTextMessage(update.Message.Chat.Id, replyTextMarkdown, false, 0, null, ParseMode.Markdown);
+                        await bot.SendTextMessage(update.Message.Chat.Id, replyTextMarkdown, false, false, 0, null, ParseMode.Markdown);
                     }
 
                     if (!string.IsNullOrEmpty(replyImage) && replyImage.Length > 5)
