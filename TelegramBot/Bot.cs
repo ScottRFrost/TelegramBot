@@ -368,20 +368,23 @@ ww - WeightWatcher PointsPlus calc
                             {
                                 // Try for RT score scrape
                                 httpClient.AuthorizationHeader = "Basic " + bingKey;
-                                dynamic drt = JObject.Parse(httpClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27rottentomatoes+" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1").Result);
+                                dynamic drt = JObject.Parse(httpClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27site%3Arottentomatoes.com%20" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1").Result);
                                 httpClient.AuthorizationHeader = string.Empty;
                                 if (drt.d != null && drt.d.results != null && Enumerable.Count(drt.d.results) > 0)
                                 {
-                                    var rt = httpClient.DownloadString((string)drt.d.results[0].Url).Result;
-                                    var rtCritic = Regex.Match(rt, @"<div class=""critic-score meter"">.*?<span itemprop=""ratingValue"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
-                                    var rtAudience = Regex.Match(rt, @"<div class=""audience-score meter"">.*?<span.*?>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    string rtUrl = drt.d.results[0].Url;
+                                    var rt = httpClient.DownloadString(rtUrl).Result;
+                                    //var rtCritic = Regex.Match(rt, @"<span class=""meter-value .*?<span>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtCritic = Regex.Match(rt, @"<span class=""meter-value superPageFontColor""><span>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtAudience = Regex.Match(rt, @"<span class=""superPageFontColor"" style=""vertical-align:top"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
                                     replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + "\r\nIMDb: " + rating + " (" + votes + " votes) | RT critic: " + rtCritic + "% | RT audience: " + rtAudience + "\r\n" + HttpUtility.HtmlDecode(plot);
                                 }
                                 else
                                 {
                                     var rt = httpClient.DownloadString("http://www.rottentomatoes.com/search/?search=" + HttpUtility.UrlEncode(body)).Result;
-                                    var rtCritic = Regex.Match(rt, @"<div class=""critic-score meter"">.*?<span itemprop=""ratingValue"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
-                                    var rtAudience = Regex.Match(rt, @"<div class=""audience-score meter"">.*?<span.*?>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    //var rtCritic = Regex.Match(rt, @"<span class=""meter-value .*?<span>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtCritic = Regex.Match(rt, @"<span class=""meter-value superPageFontColor""><span>(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
+                                    var rtAudience = Regex.Match(rt, @"<span class=""superPageFontColor"" style=""vertical-align:top"">(.*?)</span>", RegexOptions.IgnoreCase).Groups[1].Value.Trim();
                                     replyText = HttpUtility.HtmlDecode(title) + " (" + year + ") - " + HttpUtility.HtmlDecode(tagline) + "\r\nIMDb: " + rating + " (" + votes + " votes) | RT critic: " + rtCritic + "% | RT audience: " + rtAudience + "\r\n" + HttpUtility.HtmlDecode(plot);
                                 }
 
