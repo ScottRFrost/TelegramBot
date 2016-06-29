@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Xml;
 using Newtonsoft.Json.Linq;
+using OverwatchAPI;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -472,6 +473,31 @@ ww - WeightWatcher PointsPlus calc
                             var iout = rout.Next(0, Enumerable.Count(dout.webcams));
                             replyImage = dout.webcams[iout].CURRENTIMAGEURL;
                             replyImageCaption = dout.webcams[iout].organization + " " + dout.webcams[iout].neighborhood + " " + dout.webcams[iout].city + ", " + dout.webcams[iout].state + "\r\n" + dout.webcams[iout].CAMURL;
+                            break;
+
+                        case "/overwatch":
+                            if (body.Length < 2)
+                            {
+                                replyText = "Usage: /overwatch <Battletag with no spaces>  eg: /overwatch SniperFox#1513";
+                                break;
+                            }
+                            var ow = new OverwatchPlayer(body, Platform.pc, Region.us);
+                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            ow.UpdateStats().GetAwaiter().GetResult();
+                            if (ow.CompetitiveStats.AllHeroes != null)
+                            { 
+                                replyTextMarkdown = "*Competitive Play - Rank " + ow.CompetitiveRank + "*\r\n" + ow.CompetitiveStats.AllHeroes.Game.GamesWon + " wins, " + (ow.CompetitiveStats.AllHeroes.Game.GamesPlayed - ow.CompetitiveStats.AllHeroes.Game.GamesWon) + " losses " +
+                                    "(" + Math.Round((ow.CompetitiveStats.AllHeroes.Game.GamesWon / ow.CompetitiveStats.AllHeroes.Game.GamesPlayed) * 100, 2) + "%) " +
+                                    "over " + Math.Round(ow.CompetitiveStats.AllHeroes.Game.TimePlayed.TotalHours / 24, 2) + " days played.\r\n" +
+                                    ow.CompetitiveStats.AllHeroes.Combat.Eliminations + " eliminations, " + ow.CompetitiveStats.AllHeroes.Deaths.Deaths + " deaths, " + Math.Round(ow.CompetitiveStats.AllHeroes.Combat.Eliminations / ow.CompetitiveStats.AllHeroes.Deaths.Deaths, 2) + " eliminations per death.\r\n" +
+                                    ow.CompetitiveStats.AllHeroes.MatchAwards.Cards + " cards, " + ow.CompetitiveStats.AllHeroes.MatchAwards.MedalsGold + " gold, " + ow.CompetitiveStats.AllHeroes.MatchAwards.MedalsSilver + " silver, and " + ow.CompetitiveStats.AllHeroes.MatchAwards.MedalsGold + " bronze medals.\r\n";
+                            }
+                            replyTextMarkdown += "*Quick Filthy Casual Play - Level " + ow.PlayerLevel + "*\r\n" + ow.CasualStats.AllHeroes.Game.GamesWon + " wins, " + (ow.CasualStats.AllHeroes.Game.GamesPlayed - ow.CasualStats.AllHeroes.Game.GamesWon) + " losses " +
+                                "(" + Math.Round((ow.CasualStats.AllHeroes.Game.GamesWon / ow.CasualStats.AllHeroes.Game.GamesPlayed) * 100, 2) + "%) " +
+                                "over " + Math.Round(ow.CasualStats.AllHeroes.Game.TimePlayed.TotalHours / 24, 2) + " days played.\r\n" +
+                                ow.CasualStats.AllHeroes.Combat.Eliminations + " eliminations, " + ow.CasualStats.AllHeroes.Deaths.Deaths + " deaths, " + Math.Round(ow.CasualStats.AllHeroes.Combat.Eliminations / ow.CasualStats.AllHeroes.Deaths.Deaths, 2) + " eliminations per death.\r\n" +
+                                ow.CasualStats.AllHeroes.MatchAwards.Cards + " cards, " + ow.CasualStats.AllHeroes.MatchAwards.MedalsGold + " gold, " + ow.CasualStats.AllHeroes.MatchAwards.MedalsSilver + " silver, and " + ow.CasualStats.AllHeroes.MatchAwards.MedalsGold + " bronze medals.\r\n" +
+                                ow.ProfileURL.Replace("/en-gb/", "/en-us/");
                             break;
 
                         case "/pony":
