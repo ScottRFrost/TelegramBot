@@ -1,1 +1,6 @@
 ﻿/packages
+/TelegramBot/bin
+/TelegramBot/obj
+/.vs/TelegramBot/v14
+/packages
+*.user

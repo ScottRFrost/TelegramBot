@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using OverwatchAPI;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace TelegramBot
 {
@@ -42,8 +43,8 @@ class Bot
             var telegramKey = ConfigurationManager.AppSettings["TelegramKey"];
 
             // Start Bot
-            var bot = new Api(telegramKey);
-            var me = await bot.GetMe();
+            var bot = new TelegramBotClient(telegramKey);
+            var me = await bot.GetMeAsync();
             Console.WriteLine(me.Username + " started at " + DateTime.Now);
 
             var offset = 0;
@@ -52,7 +53,7 @@ class Bot
                 var updates = new Update[0];
                 try
                 {
-                    updates = await bot.GetUpdates(offset);
+                    updates = await bot.GetUpdatesAsync(offset);
                 }
                 catch (TaskCanceledException)
                 {
@@ -72,7 +73,7 @@ class Bot
             }
         }
 
-        static async void ProcessUpdate(Api bot, Update update, User me)
+        static async void ProcessUpdate(TelegramBotClient bot, Update update, User me)
         {
             // Read Configuration
             var wundergroundKey = ConfigurationManager.AppSettings["WundergroundKey"];
@@ -128,7 +129,7 @@ class Bot
                                 break;
                             }
 
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             var beerSearch = httpClient.DownloadString("http://www.beeradvocate.com/search/?q=" + HttpUtility.UrlEncode(body) + "&qt=beer").Result.Replace("\r", "").Replace("\n", "");
 
                             // Load First Result
@@ -176,7 +177,7 @@ class Bot
                                 break;
                             }
 
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             var search = httpClient.DownloadString("http://www.calorieking.com/foods/search.php?keywords=" + body).Result.Replace("\r", "").Replace("\n", "");
 
                             // Load First Result
@@ -242,7 +243,7 @@ class Bot
                                 body = "Cincinnati, OH";
                             }
 
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dfor = JObject.Parse(httpClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/forecast/q/" + body + ".json").Result);
                             if (dfor.forecast == null || dfor.forecast.txt_forecast == null)
                             {
@@ -257,7 +258,7 @@ class Bot
 
                         case "/help":
                             replyText = "The Great & powerful Trixie understands the following commands:\r\n" +
-                                "/cat /doge /fat /forecast /help /image /imdb /google /joke /map /outside /pony /radar /satellite /stock /stock7 /stockyear /translate /translateto /trixie /version /weather /wiki /ww";
+                                "/cat /doge /fat /forecast /help /image /imdb /google /joke /map /outside /overwatch /pony /radar /satellite /stock /stock7 /stockyear /translate /translateto /trixie /version /weather /wiki /ww";
                             /* Send this string of text to BotFather to register the bot's commands:
 cat - Get a picture of a cat
 doge - Dogeify a comma sep list of terms
@@ -270,6 +271,7 @@ google - Search Google
 map - Returns a location for the given search
 joke - Returns a random joke from /r/jokes on Reddit
 outside - Webcam image
+overwatch - Overwatch Stats
 pony - Ponies matching comma separated tags
 radar - Weather radar
 remind - Sets a reminder message after X minutes
@@ -294,7 +296,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /image <Description of image to find>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             httpClient.AuthorizationHeader = "Basic " + bingKey;
                             dynamic dimg = JObject.Parse(httpClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Image?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=3").Result);
                             httpClient.AuthorizationHeader = string.Empty;
@@ -329,7 +331,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /imdb <Movie Title>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
 
                             // Search Bing
                             httpClient.AuthorizationHeader = "Basic " + bingKey;
@@ -403,7 +405,7 @@ ww - WeightWatcher PointsPlus calc
                             break;
 
                         case "/joke":
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic djoke = JObject.Parse(httpClient.DownloadString("https://api.reddit.com/r/jokes/top?t=day&limit=5").Result);
                             var rjoke = new Random();
                             var ijokemax = Enumerable.Count(djoke.data.children);
@@ -422,7 +424,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /map <Search Text>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dmap = JObject.Parse(httpClient.DownloadString("http://maps.googleapis.com/maps/api/geocode/json?address=" + HttpUtility.UrlEncode(body)).Result);
                             if (dmap == null || dmap.results == null || Enumerable.Count(dmap.results) < 1)
                             { 
@@ -430,7 +432,7 @@ ww - WeightWatcher PointsPlus calc
                             }
                             else
                             {
-                                await bot.SendLocation(update.Message.Chat.Id, (float)dmap.results[0].geometry.location.lat, (float)dmap.results[0].geometry.location.lng);
+                                await bot.SendLocationAsync(update.Message.Chat.Id, (float)dmap.results[0].geometry.location.lat, (float)dmap.results[0].geometry.location.lng);
                             }
                             break;
 
@@ -441,7 +443,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /google <Search Text>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             httpClient.AuthorizationHeader = "Basic " + bingKey;
                             dynamic dgoog = JObject.Parse(httpClient.DownloadString("https://api.datamarket.azure.com/Data.ashx/Bing/Search/Web?Market=%27en-US%27&Adult=%27Moderate%27&Query=%27" + HttpUtility.UrlEncode(body) + "%27&$format=json&$top=1").Result);
                             httpClient.AuthorizationHeader = string.Empty;
@@ -462,7 +464,7 @@ ww - WeightWatcher PointsPlus calc
                             {
                                 body = "Cincinnati, OH";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dout = JObject.Parse(httpClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/webcams/q/" + body + ".json").Result);
                             if (dout.webcams == null)
                             {
@@ -482,7 +484,7 @@ ww - WeightWatcher PointsPlus calc
                                 break;
                             }
                             var ow = new OverwatchPlayer(body, Platform.pc, Region.us);
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             ow.UpdateStats().GetAwaiter().GetResult();
                             if (ow.CompetitiveStats.AllHeroes != null)
                             { 
@@ -507,7 +509,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "I like ponies too.  What kind of pony would you like me to search for?";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dpony = JObject.Parse(httpClient.DownloadString("https://derpibooru.org/search.json?q=safe," + HttpUtility.UrlEncode(body)).Result);
                             if (dpony.search == null)
                             {
@@ -590,7 +592,7 @@ ww - WeightWatcher PointsPlus calc
                             { 
                                 body = "Cincinnati, OH";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic rsat = JObject.Parse(httpClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/satellite/q/" + body + ".json").Result);
                             if (rsat.satellite == null || rsat.satellite.image_url == null)
                             { 
@@ -609,7 +611,7 @@ ww - WeightWatcher PointsPlus calc
                             { 
                                 body = "^DJI";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             replyImage = "https://chart.yahoo.com/t?s=" + body + "&lang=en-US&region=US&width=1200&height=765";
                             replyImageCaption = "Chart for " + body + " as of " + DateTime.Now.ToString("MM/dd/yyy HH:mm:ss");
                             break;
@@ -619,7 +621,7 @@ ww - WeightWatcher PointsPlus calc
                             { 
                                 body = "^DJI";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             replyImage = "https://chart.yahoo.com/w?s=" + body + "&lang=en-US&region=US&width=1200&height=765";
                             replyImageCaption = "5 day chart for " + body + " as of " + DateTime.Now.ToString("MM/dd/yyy HH:mm:ss");
                             break;
@@ -629,7 +631,7 @@ ww - WeightWatcher PointsPlus calc
                             { 
                                 body = "^DJI";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             replyImage = "https://chart.yahoo.com/c/1y/" + body;
                             replyImageCaption = "Year chart for " + body + " as of " + DateTime.Now.ToString("MM/dd/yyy HH:mm:ss");
                             break;
@@ -640,7 +642,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /translateto <Language Code> <English Text>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             var lang = body.Substring(0, body.IndexOf(" ", StringComparison.Ordinal));
                             var query = body.Substring(body.IndexOf(" ", StringComparison.Ordinal) + 1);
                             httpClient.AuthorizationHeader = "Basic " + bingKey;
@@ -662,7 +664,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /translate <Foreign Text>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             httpClient.AuthorizationHeader = "Basic " + bingKey;
                             dynamic dtrans = JObject.Parse(httpClient.DownloadString("https://api.datamarket.azure.com/Bing/MicrosoftTranslator/v1/Translate?Text=%27" + HttpUtility.UrlEncode(body) + "%27&To=%27en%27&$format=json").Result);
                             httpClient.AuthorizationHeader = string.Empty;
@@ -682,7 +684,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /trixie <Query>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             var xmlDoc = new XmlDocument();
                             xmlDoc.LoadXml(httpClient.DownloadString("http://api.wolframalpha.com/v2/query?input=" + HttpUtility.UrlEncode(body) + "&appid=" + wolframAppId).Result);
                             var queryResult = xmlDoc.SelectSingleNode("/queryresult");
@@ -743,7 +745,7 @@ ww - WeightWatcher PointsPlus calc
                             { 
                                 body = "Cincinnati, OH";
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             dynamic dwthr = JObject.Parse(httpClient.DownloadString("http://api.wunderground.com/api/" + wundergroundKey + "/conditions/q/" + body + ".json").Result);
                             if (dwthr.current_observation == null)
                             { 
@@ -766,7 +768,7 @@ ww - WeightWatcher PointsPlus calc
                                 replyText = "Usage: /wiki <Query>";
                                 break;
                             }
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                             var dwiki = JObject.Parse(httpClient.DownloadString("https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro=&explaintext=&redirects=true&titles=" + HttpUtility.UrlEncode(body)).Result);
                             if (dwiki["query"].HasValues && dwiki["query"]["pages"].HasValues)
                             {
@@ -812,18 +814,18 @@ ww - WeightWatcher PointsPlus calc
                     if (!string.IsNullOrEmpty(replyText))
                     {
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyText);
-                        await bot.SendTextMessage(update.Message.Chat.Id, replyText);
+                        await bot.SendTextMessageAsync(update.Message.Chat.Id, replyText);
                     }
                     if (!string.IsNullOrEmpty(replyTextMarkdown))
                     {
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyTextMarkdown);
-                        await bot.SendTextMessage(update.Message.Chat.Id, replyTextMarkdown, false, false, 0, null, ParseMode.Markdown);
+                        await bot.SendTextMessageAsync(update.Message.Chat.Id, replyTextMarkdown, false, false, 0, null, ParseMode.Markdown);
                     }
 
                     if (!string.IsNullOrEmpty(replyImage) && replyImage.Length > 5)
                     {
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyImage);
-                        bot.SendChatAction(update.Message.Chat.Id, ChatAction.Typing);
+                        await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.Typing);
                         try
                         {
                             var stream = httpClient.DownloadData(replyImage).Result;
@@ -845,48 +847,48 @@ ww - WeightWatcher PointsPlus calc
                                 extension = ".bmp";
                             }
                             var photo = new FileToSend("Photo" + extension, stream);
-                            bot.SendChatAction(update.Message.Chat.Id, ChatAction.UploadPhoto);
+                            await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.UploadPhoto);
                             if (extension == ".gif")
                             { 
-                                await bot.SendDocument(update.Message.Chat.Id, photo);
+                                await bot.SendDocumentAsync(update.Message.Chat.Id, photo);
                             }
                             else
                             { 
-                                await bot.SendPhoto(update.Message.Chat.Id, photo, replyImageCaption == string.Empty ? replyImage : replyImageCaption);
+                                await bot.SendPhotoAsync(update.Message.Chat.Id, photo, replyImageCaption == string.Empty ? replyImage : replyImageCaption);
                             }
                         }
                         catch (System.Net.Http.HttpRequestException ex)
                         {
                             Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
-                            await bot.SendTextMessage(update.Message.Chat.Id, replyImage);
+                            await bot.SendTextMessageAsync(update.Message.Chat.Id, replyImage);
                         }
                         catch (System.Net.WebException ex)
                         {
                             Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
-                            await bot.SendTextMessage(update.Message.Chat.Id, replyImage);
+                            await bot.SendTextMessageAsync(update.Message.Chat.Id, replyImage);
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine(replyImage + " Threw: " + ex.Message);
-                            await bot.SendTextMessage(update.Message.Chat.Id, replyImage);
+                            await bot.SendTextMessageAsync(update.Message.Chat.Id, replyImage);
                         }
                     }
 
                     if (!string.IsNullOrEmpty(replyDocument) && replyDocument.Length > 5)
                     {
                         Console.WriteLine(update.Message.Chat.Id + " > " + replyDocument);
-                        bot.SendChatAction(update.Message.Chat.Id, ChatAction.UploadDocument);
+                        await bot.SendChatActionAsync(update.Message.Chat.Id, ChatAction.UploadDocument);
                         var stream = httpClient.DownloadData(replyDocument).Result;
                         var filename = replyDocument.Substring(replyDocument.LastIndexOf("/", StringComparison.Ordinal));
                         var document = new FileToSend(filename, stream);
-                        await bot.SendDocument(update.Message.Chat.Id, document);
+                        await bot.SendDocumentAsync(update.Message.Chat.Id, document);
                     }
                 }
             }
             catch (System.Net.WebException ex)
             {
                 Console.WriteLine("Unable to download " + ex.HResult + " " + ex.Message);
-                await bot.SendTextMessage(update.Message.Chat.Id, "The Great & Powerful Trixie got bored while waiting for that to download.  Try later.");
+                await bot.SendTextMessageAsync(update.Message.Chat.Id, "The Great & Powerful Trixie got bored while waiting for that to download.  Try later.");
             }
             catch (Exception ex)
             {
@@ -894,10 +896,10 @@ ww - WeightWatcher PointsPlus calc
             }
         }
 
-        static async void DelayedMessage(Api bot, long chatId, string message, int minutesToWait)
+        static async void DelayedMessage(TelegramBotClient bot, long chatId, string message, int minutesToWait)
         {
             await Task.Delay(minutesToWait * 60000);
-            await bot.SendTextMessage(chatId, message);
+            await bot.SendTextMessageAsync(chatId, message);
         }
     }
 }
